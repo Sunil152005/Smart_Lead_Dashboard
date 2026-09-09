@@ -1,13 +1,22 @@
 services:
-
   backend:
     build: ./backend
-
+    container_name: lead_dashboard_backend
     ports:
       - "5000:5000"
+    environment:
+      - PORT=5000
+      - JWT_SECRET=mysecret
+      - MONGO_URI=mongodb+srv://suniljadhav152005_db_user:Sunil152005@leaddashboard.fb4yd8d.mongodb.net/?appName=LeadDashboard
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
-
+    container_name: lead_dashboard_frontend
     ports:
       - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+    restart: unless-stopped
