@@ -66,22 +66,22 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs transition-opacity animate-fade-in flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-xs transition-opacity animate-fade-in flex justify-end">
       <div
-        className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-slide-left overflow-hidden text-slate-900"
+        className="w-full max-w-xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-slide-left overflow-hidden text-slate-900 dark:text-white transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 flex items-start justify-between bg-slate-50">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50 dark:bg-slate-800/60">
           <div className="flex-1 pr-4">
             <div className="flex items-center gap-2 mb-1.5">
               <span
                 className={`text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${
                   lead.status === "Won"
-                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
                     : lead.status === "Lost"
-                    ? "bg-rose-100 text-rose-800 border-rose-300"
-                    : "bg-indigo-100 text-indigo-800 border-indigo-300"
+                    ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800"
+                    : "bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800"
                 }`}
               >
                 {lead.status}
@@ -89,13 +89,13 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
               <span className="text-xs text-slate-500 font-mono">ID: {lead._id}</span>
             </div>
 
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {lead.name}
             </h2>
 
-            <div className="flex items-center gap-2 text-xs text-slate-600 mt-1 font-medium">
+            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
               <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-              <span className="font-bold text-slate-800">{lead.company || "Individual Account"}</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{lead.company || "Individual Account"}</span>
               <span>•</span>
               <span>{lead.jobTitle || "Lead Contact"}</span>
             </div>
@@ -104,13 +104,13 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onEdit(lead)}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer"
             >
               Edit Lead
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -120,21 +120,21 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
           {/* Smart AI Lead Score Box */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 border border-indigo-200 shadow-xs">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 dark:from-indigo-950/40 dark:via-blue-950/30 dark:to-purple-950/40 border border-indigo-200 dark:border-indigo-900 shadow-xs">
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                <span className="text-xs font-extrabold text-indigo-900 uppercase tracking-wider">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-xs font-extrabold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
                   Smart AI Lead Score
                 </span>
               </div>
               <div
                 className={`flex items-center gap-1 text-xs font-extrabold px-3 py-1 rounded-full border ${
                   lead.leadScoreCategory === "Hot"
-                    ? "bg-rose-100 text-rose-800 border-rose-300"
+                    ? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800"
                     : lead.leadScoreCategory === "Warm"
-                    ? "bg-amber-100 text-amber-800 border-amber-300"
-                    : "bg-slate-100 text-slate-800 border-slate-300"
+                    ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700"
                 }`}
               >
                 {lead.leadScoreCategory === "Hot" && <Flame className="w-3.5 h-3.5 text-rose-600 fill-rose-600" />}
@@ -145,7 +145,7 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
             </div>
 
             {/* Score progress bar */}
-            <div className="w-full bg-slate-200 rounded-full h-2.5 mb-3 overflow-hidden">
+            <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 mb-3 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   lead.leadScoreCategory === "Hot"
@@ -160,7 +160,7 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
 
             {/* Score Factors */}
             <div className="space-y-1.5">
-              <span className="text-xs font-bold text-slate-700">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 Key AI Assessment Factors:
               </span>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -170,7 +170,7 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                 ).map((factor, idx) => (
                   <li
                     key={idx}
-                    className="flex items-center gap-1.5 text-xs text-slate-800 bg-white px-2.5 py-1.5 rounded-xl border border-indigo-100 shadow-2xs"
+                    className="flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900 shadow-2xs"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span className="truncate font-semibold">{factor}</span>
@@ -184,23 +184,23 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
           <div className="grid grid-cols-3 gap-2.5">
             <a
               href={`mailto:${lead.email}`}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition-colors"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors"
             >
-              <Mail className="w-4 h-4 text-indigo-600" />
+              <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               <span>Send Email</span>
             </a>
             {lead.phone ? (
               <a
                 href={`tel:${lead.phone}`}
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-colors"
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800 transition-colors"
               >
-                <Phone className="w-4 h-4 text-blue-600" />
+                <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Call Phone</span>
               </a>
             ) : (
               <button
                 disabled
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed opacity-60"
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-bold cursor-not-allowed opacity-60"
               >
                 <Phone className="w-4 h-4" />
                 <span>No Phone</span>
@@ -211,15 +211,15 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                 href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200 transition-colors"
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800 transition-colors"
               >
-                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>WhatsApp</span>
               </a>
             ) : (
               <button
                 disabled
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed opacity-60"
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-bold cursor-not-allowed opacity-60"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>WhatsApp</span>
@@ -228,15 +228,15 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
           </div>
 
           {/* Deal & Contact Information Details */}
-          <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Deal & Opportunity Details
             </h3>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-500 font-semibold">Deal Value:</span>
-                <p className="font-black text-slate-900 text-lg mt-0.5">
+                <p className="font-black text-slate-900 dark:text-white text-lg mt-0.5">
                   ${(lead.dealValue || 0).toLocaleString()} {lead.currency || "USD"}
                 </p>
               </div>
@@ -249,7 +249,7 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                     onChange={(e) =>
                       onUpdateStatus(lead._id, e.target.value as LeadStatus)
                     }
-                    className="w-full text-xs font-bold p-1.5 rounded-xl border border-slate-300 bg-white text-slate-900 cursor-pointer shadow-2xs"
+                    className="w-full text-xs font-bold p-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer shadow-2xs"
                   >
                     <option value="New">New</option>
                     <option value="Contacted">Contacted</option>
@@ -264,28 +264,28 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
 
               <div>
                 <span className="text-slate-500 font-semibold">Priority Level:</span>
-                <p className="font-bold text-slate-900 mt-0.5">
+                <p className="font-bold text-slate-900 dark:text-white mt-0.5">
                   {lead.priority}
                 </p>
               </div>
 
               <div>
                 <span className="text-slate-500 font-semibold">Acquisition Channel:</span>
-                <p className="font-bold text-slate-900 mt-0.5">
+                <p className="font-bold text-slate-900 dark:text-white mt-0.5">
                   {lead.source}
                 </p>
               </div>
 
               <div>
                 <span className="text-slate-500 font-semibold">Assigned Sales Rep:</span>
-                <p className="font-bold text-slate-900 mt-0.5">
+                <p className="font-bold text-slate-900 dark:text-white mt-0.5">
                   {lead.assignedTo}
                 </p>
               </div>
 
               <div>
                 <span className="text-slate-500 font-semibold">Follow-up Reminder:</span>
-                <p className="font-bold text-slate-900 mt-0.5">
+                <p className="font-bold text-slate-900 dark:text-white mt-0.5">
                   {formatDate(lead.followUpDate)}
                 </p>
               </div>
@@ -293,13 +293,13 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
 
             {/* Tags */}
             {lead.tags && lead.tags.length > 0 && (
-              <div className="pt-2 border-t border-slate-200">
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                 <span className="text-slate-500 text-xs font-semibold block mb-1.5">Tags:</span>
                 <div className="flex flex-wrap gap-1.5">
                   {lead.tags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white text-indigo-700 border border-indigo-200"
+                      className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
                     >
                       #{tag}
                     </span>
@@ -312,23 +312,23 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
           {/* Activity Log & Notes Timeline */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Activity Timeline & Interaction History ({lead.notes?.length || 0})
               </h3>
             </div>
 
             {/* Note Composer */}
             <form onSubmit={handleAddNote} className="mb-4">
-              <div className="p-3 rounded-2xl border border-slate-300 bg-white shadow-xs focus-within:border-indigo-500">
-                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+              <div className="p-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xs focus-within:border-indigo-500">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800">
                   <span className="text-[11px] text-slate-500 font-bold">Activity:</span>
                   <button
                     type="button"
                     onClick={() => setNoteType("note")}
                     className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-colors ${
                       noteType === "note"
-                        ? "bg-indigo-100 text-indigo-700"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     Note
@@ -338,8 +338,8 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                     onClick={() => setNoteType("call")}
                     className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-colors ${
                       noteType === "call"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     Call Log
@@ -349,8 +349,8 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                     onClick={() => setNoteType("email")}
                     className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-colors ${
                       noteType === "email"
-                        ? "bg-sky-100 text-sky-700"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     Email
@@ -362,10 +362,10 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder={`Write a ${noteType} or follow-up note...`}
                   rows={2}
-                  className="w-full text-xs bg-transparent border-none focus:outline-none resize-none text-slate-900 placeholder:text-slate-400"
+                  className="w-full text-xs bg-transparent border-none focus:outline-none resize-none text-slate-900 dark:text-white placeholder:text-slate-400"
                 />
 
-                <div className="flex justify-end pt-2 border-t border-slate-100">
+                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="submit"
                     disabled={!newNote.trim() || submittingNote}
@@ -379,7 +379,7 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
             </form>
 
             {/* Timeline List */}
-            <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+            <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
               {(!lead.notes || lead.notes.length === 0) ? (
                 <p className="text-xs text-slate-400 pl-8">No activities recorded yet.</p>
               ) : (
@@ -387,7 +387,7 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                   <div key={idx} className="relative flex items-start gap-3 pl-8">
                     {/* Timeline bullet */}
                     <div
-                      className={`absolute left-1.5 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center shadow-xs ${
+                      className={`absolute left-1.5 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs ${
                         item.type === "call"
                           ? "bg-emerald-500"
                           : item.type === "email"
@@ -398,16 +398,16 @@ export const LeadDrawer: React.FC<LeadDrawerProps> = ({
                       }`}
                     />
 
-                    <div className="flex-1 p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+                    <div className="flex-1 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-xs">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-extrabold text-slate-900">
+                        <span className="font-extrabold text-slate-900 dark:text-white">
                           {item.author}
                         </span>
                         <span className="text-[10px] text-slate-500 font-semibold">
                           {formatDateTime(item.createdAt)}
                         </span>
                       </div>
-                      <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
+                      <p className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed whitespace-pre-wrap">
                         {item.content}
                       </p>
                     </div>

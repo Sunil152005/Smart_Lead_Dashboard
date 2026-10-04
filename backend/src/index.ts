@@ -4,6 +4,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes";
 import leadRoutes from "./routes/leadRoutes";
 import { initDatabase, isMongoConnected } from "./services/db";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 dotenv.config();
 
@@ -19,9 +20,34 @@ app.use(
 );
 app.use(express.json());
 
-// API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/leads", leadRoutes);
+// API Documentation & Discovery route
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Smart Lead Dashboard CRM REST API",
+    version: "2.0.0",
+    healthCheck: "/api/health",
+    endpoints: {
+      auth: {
+        register: "POST /api/auth/register",
+        login: "POST /api/auth/login",
+        me: "GET /api/auth/me",
+      },
+      leads: {
+        list: "GET /api/leads?status=&source=&search=&page=&limit=&sortBy=&sortOrder=",
+        getById: "GET /api/leads/:id",
+        create: "POST /api/leads",
+        update: "PUT /api/leads/:id",
+        delete: "DELETE /api/leads/:id (Admin only)",
+        addNote: "POST /api/leads/:id/notes",
+        analytics: "GET /api/leads/analytics",
+        importCSV: "POST /api/leads/import",
+        bulkDelete: "POST /api/leads/bulk-delete (Admin only)",
+        bulkUpdate: "POST /api/leads/bulk-update",
+      },
+    },
+  });
+});
 
 // Health check endpoint
 app.get("/api/health", (_req, res) => {
@@ -33,13 +59,15 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.get("/", (_req, res) => {
-  res.json({
-    message: "Smart Lead Dashboard CRM Backend is running.",
-    version: "2.0.0",
-    healthCheck: "/api/health",
-  });
-});
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/leads", leadRoutes);
+
+// 404 Catch-all handler
+app.use(notFoundHandler);
+
+// Centralized Global Error Handler
+app.use(errorHandler);
 
 // Start Server and Database initialization
 async function startServer() {

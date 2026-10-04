@@ -1,67 +1,10 @@
 import { Request, Response } from "express";
-import Lead from "../models/Lead";
+import Lead, { ILead } from "../models/Lead";
 import { isMongoConnected, memoryStore } from "../services/db";
 import { calculateLeadScore } from "../services/leadScorer";
 import { AuthRequest } from "../middlewares/authMiddleware";
 
-export const createLead = async (req: AuthRequest, res: Response) => {
-  try {
-    const data = req.body;
-    if (!data.name || !data.email) {
-      return res.status(400).json({ message: "Lead name and email are required." });
-    }
-
-    const scoring = calculateLeadScore(data);
-    const initialNotes = Array.isArray(data.notes) ? [...data.notes] : [];
-
-    const creatorName = req.user?.name || "Sales Rep";
-    initialNotes.push({
-      author: creatorName,
-      content: `Lead created in CRM via ${data.source || "Direct"}.`,
-      type: "note",
-      createdAt: new Date(),
-    });
-
-    const leadPayload = {
-      ...data,
-      dealValue: Number(data.dealValue || 0),
-      currency: data.currency || "USD",
-      status: data.status || "New",
-      priority: data.priority || "Medium",
-      source: data.source || "Website",
-      assignedTo: data.assignedTo || creatorName,
-      leadScore: scoring.score,
-      leadScoreCategory: scoring.category,
-      scoreFactors: scoring.factors,
-      tags: Array.isArray(data.tags) ? data.tags : [],
-      notes: initialNotes,
-    };
-
-    let createdLead: any;
-
-    if (isMongoConnected) {
-      createdLead = await Lead.create(leadPayload);
-    } else {
-      createdLead = {
-        _id: `lead_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        ...leadPayload,
-        notes: initialNotes.map((n, i) => ({
-          _id: `note_${Date.now()}_${i}`,
-          ...n,
-        })),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      memoryStore.leads.unshift(createdLead);
-    }
-
-    return res.status(201).json(createdLead);
-  } catch (error: any) {
-    console.error("Create Lead Error:", error);
-    return res.status(500).json({ message: "Failed to create lead", error: error.message });
-  }
-};
-
+// GET /api/leads - View Leads List with Advanced Filtering, Search & Backend Pagination
 export const getLeads = async (req: Request, res: Response) => {
   try {
     const {
@@ -76,6 +19,22 @@ export const getLeads = async (req: Request, res: Response) => {
       page = 1,
       limit = 10,
     } = req.query;
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = limit === "all" ? 1000 : Math.max(1, Number(limit) || 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Normalize sort field: handles 'latest' and 'oldest' aliases from assignment
+    let actualSortBy = String(sortBy);
+    let actualSortOrder = String(sortOrder).toLowerCase() === "asc" ? "asc" : "desc";
+
+    if (actualSortBy === "latest") {
+      actualSortBy = "createdAt";
+      actualSortOrder = "desc";
+    } else if (actualSortBy === "oldest") {
+      actualSortBy = "createdAt";
+      actualSortOrder = "asc";
+    }
 
     if (isMongoConnected) {
       const query: any = {};
@@ -107,26 +66,28 @@ export const getLeads = async (req: Request, res: Response) => {
         ];
       }
 
-      const sortDirection = sortOrder === "asc" ? 1 : -1;
-      const sortObj: any = { [String(sortBy)]: sortDirection };
-
-      const pageNum = Math.max(1, Number(page));
-      const limitNum = limit === "all" ? 1000 : Math.max(1, Number(limit));
-      const skip = (pageNum - 1) * limitNum;
+      const sortDirection = actualSortOrder === "asc" ? 1 : -1;
+      const sortObj: any = { [actualSortBy]: sortDirection };
 
       const [leads, total] = await Promise.all([
         Lead.find(query).sort(sortObj).skip(skip).limit(limitNum),
         Lead.countDocuments(query),
       ]);
 
+      const totalPages = Math.ceil(total / limitNum) || 1;
+
       return res.json({
+        success: true,
         leads,
         totalLeads: total,
-        totalPages: Math.ceil(total / limitNum) || 1,
+        totalPages,
         currentPage: pageNum,
+        limit: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       });
     } else {
-      // Memory Store Querying
+      // Memory Store Querying with In-Memory Search, Filter & Pagination
       let filtered = [...memoryStore.leads];
 
       if (status && status !== "ALL") {
@@ -157,16 +118,17 @@ export const getLeads = async (req: Request, res: Response) => {
         });
       }
 
-      // Sorting
-      const sortField = String(sortBy);
-      const isAsc = sortOrder === "asc";
+      // In-Memory Sorting
+      const isAsc = actualSortOrder === "asc";
       filtered.sort((a, b) => {
-        let valA = a[sortField];
-        let valB = b[sortField];
+        let valA = a[actualSortBy];
+        let valB = b[actualSortBy];
 
-        if (sortField === "createdAt" || sortField === "updatedAt") {
+        if (actualSortBy === "createdAt" || actualSortBy === "updatedAt") {
           valA = new Date(valA || 0).getTime();
           valB = new Date(valB || 0).getTime();
+        } else if (typeof valA === "number" && typeof valB === "number") {
+          return isAsc ? valA - valB : valB - valA;
         } else if (typeof valA === "string") {
           valA = valA.toLowerCase();
           valB = (valB || "").toLowerCase();
@@ -178,24 +140,120 @@ export const getLeads = async (req: Request, res: Response) => {
       });
 
       const total = filtered.length;
-      const pageNum = Math.max(1, Number(page));
-      const limitNum = limit === "all" ? 1000 : Math.max(1, Number(limit));
-      const skip = (pageNum - 1) * limitNum;
+      const totalPages = Math.ceil(total / limitNum) || 1;
       const paginatedLeads = filtered.slice(skip, skip + limitNum);
 
       return res.json({
+        success: true,
         leads: paginatedLeads,
         totalLeads: total,
-        totalPages: Math.ceil(total / limitNum) || 1,
+        totalPages,
         currentPage: pageNum,
+        limit: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       });
     }
   } catch (error: any) {
     console.error("Get Leads Error:", error);
-    return res.status(500).json({ message: "Failed to fetch leads", error: error.message });
+    return res.status(500).json({ success: false, message: "Failed to fetch leads", error: error.message });
   }
 };
 
+// GET /api/leads/:id - View Single Lead Details
+export const getLeadById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    let lead: any = null;
+
+    if (isMongoConnected) {
+      lead = await Lead.findById(id);
+    } else {
+      lead = memoryStore.leads.find((l) => String(l._id) === String(id));
+    }
+
+    if (!lead) {
+      return res.status(404).json({ success: false, message: `Lead not found with ID: ${id}` });
+    }
+
+    return res.json({ success: true, lead });
+  } catch (error: any) {
+    console.error("Get Lead By ID Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to retrieve lead details", error: error.message });
+  }
+};
+
+// POST /api/leads - Create Lead
+export const createLead = async (req: AuthRequest, res: Response) => {
+  try {
+    const data = req.body;
+    if (!data.name || !data.email) {
+      return res.status(400).json({ success: false, message: "Lead name and email are mandatory." });
+    }
+
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email.trim())) {
+      return res.status(400).json({ success: false, message: "Please provide a valid email address." });
+    }
+
+    const scoring = calculateLeadScore(data);
+    const initialNotes = Array.isArray(data.notes) ? [...data.notes] : [];
+
+    const creatorName = req.user?.name || "Sales Rep";
+    initialNotes.push({
+      author: creatorName,
+      content: `Lead created in CRM via ${data.source || "Website"}.`,
+      type: "note",
+      createdAt: new Date(),
+    });
+
+    const leadPayload = {
+      name: data.name.trim(),
+      email: data.email.toLowerCase().trim(),
+      phone: data.phone || "",
+      company: data.company || "Individual",
+      jobTitle: data.jobTitle || "Lead Contact",
+      dealValue: Number(data.dealValue || 0),
+      currency: data.currency || "USD",
+      status: data.status || "New",
+      priority: data.priority || "Medium",
+      source: data.source || "Website",
+      assignedTo: data.assignedTo || creatorName,
+      leadScore: scoring.score,
+      leadScoreCategory: scoring.category,
+      scoreFactors: scoring.factors,
+      followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      notes: initialNotes,
+    };
+
+    let createdLead: any;
+
+    if (isMongoConnected) {
+      createdLead = await Lead.create(leadPayload);
+    } else {
+      createdLead = {
+        _id: `lead_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        ...leadPayload,
+        notes: initialNotes.map((n, i) => ({
+          _id: `note_${Date.now()}_${i}`,
+          ...n,
+        })),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      memoryStore.leads.unshift(createdLead);
+    }
+
+    return res.status(201).json(createdLead);
+  } catch (error: any) {
+    console.error("Create Lead Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to create lead", error: error.message });
+  }
+};
+
+// PUT /api/leads/:id - Update Lead
 export const updateLead = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -210,17 +268,17 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
     }
 
     if (!existingLead) {
-      return res.status(404).json({ message: "Lead not found." });
+      return res.status(404).json({ success: false, message: "Lead not found." });
     }
 
-    // Check if status changed to log activity
+    // Check if status changed to log activity timeline event
     const notes = existingLead.notes ? [...existingLead.notes] : [];
     if (updates.status && updates.status !== existingLead.status) {
       const updater = req.user?.name || "Team Member";
       notes.push({
         _id: `note_${Date.now()}`,
         author: updater,
-        content: `Stage changed from "${existingLead.status}" to "${updates.status}".`,
+        content: `Stage updated from "${existingLead.status}" to "${updates.status}".`,
         type: "stage_change",
         createdAt: new Date(),
       });
@@ -229,7 +287,7 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
 
     // Recalculate score with updated fields
     const mergedForScore = {
-      ...existingLead.toObject ? existingLead.toObject() : existingLead,
+      ...(existingLead.toObject ? existingLead.toObject() : existingLead),
       ...updates,
     };
     const scoring = calculateLeadScore(mergedForScore);
@@ -256,10 +314,11 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
     return res.json(updatedResult);
   } catch (error: any) {
     console.error("Update Lead Error:", error);
-    return res.status(500).json({ message: "Failed to update lead", error: error.message });
+    return res.status(500).json({ success: false, message: "Failed to update lead", error: error.message });
   }
 };
 
+// DELETE /api/leads/:id - Delete Lead (Admin Only)
 export const deleteLead = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -267,30 +326,31 @@ export const deleteLead = async (req: AuthRequest, res: Response) => {
     if (isMongoConnected) {
       const result = await Lead.findByIdAndDelete(id);
       if (!result) {
-        return res.status(404).json({ message: "Lead not found." });
+        return res.status(404).json({ success: false, message: "Lead not found." });
       }
     } else {
       const idx = memoryStore.leads.findIndex((l) => String(l._id) === String(id));
       if (idx === -1) {
-        return res.status(404).json({ message: "Lead not found." });
+        return res.status(404).json({ success: false, message: "Lead not found." });
       }
       memoryStore.leads.splice(idx, 1);
     }
 
-    return res.json({ message: "Lead deleted successfully", id });
+    return res.json({ success: true, message: "Lead deleted successfully", id });
   } catch (error: any) {
     console.error("Delete Lead Error:", error);
-    return res.status(500).json({ message: "Failed to delete lead", error: error.message });
+    return res.status(500).json({ success: false, message: "Failed to delete lead", error: error.message });
   }
 };
 
+// POST /api/leads/:id/notes - Add Note / Timeline Event
 export const addNote = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { content, type = "note" } = req.body;
 
     if (!content) {
-      return res.status(400).json({ message: "Note content is required." });
+      return res.status(400).json({ success: false, message: "Note content is required." });
     }
 
     const author = req.user?.name || "Sales Rep";
@@ -305,7 +365,7 @@ export const addNote = async (req: AuthRequest, res: Response) => {
 
     if (isMongoConnected) {
       const lead = await Lead.findById(id);
-      if (!lead) return res.status(404).json({ message: "Lead not found." });
+      if (!lead) return res.status(404).json({ success: false, message: "Lead not found." });
 
       lead.notes.push(newNote as any);
       const scoring = calculateLeadScore(lead);
@@ -316,7 +376,7 @@ export const addNote = async (req: AuthRequest, res: Response) => {
       updatedLead = lead;
     } else {
       const idx = memoryStore.leads.findIndex((l) => String(l._id) === String(id));
-      if (idx === -1) return res.status(404).json({ message: "Lead not found." });
+      if (idx === -1) return res.status(404).json({ success: false, message: "Lead not found." });
 
       const lead = memoryStore.leads[idx];
       const noteItem = { _id: `note_${Date.now()}`, ...newNote };
@@ -332,15 +392,16 @@ export const addNote = async (req: AuthRequest, res: Response) => {
     return res.json(updatedLead);
   } catch (error: any) {
     console.error("Add Note Error:", error);
-    return res.status(500).json({ message: "Failed to add note", error: error.message });
+    return res.status(500).json({ success: false, message: "Failed to add note", error: error.message });
   }
 };
 
+// POST /api/leads/bulk-delete - Bulk Delete Leads (Admin Only)
 export const bulkDeleteLeads = async (req: AuthRequest, res: Response) => {
   try {
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: "Array of lead IDs is required." });
+      return res.status(400).json({ success: false, message: "Array of lead IDs is required." });
     }
 
     if (isMongoConnected) {
@@ -351,18 +412,19 @@ export const bulkDeleteLeads = async (req: AuthRequest, res: Response) => {
       );
     }
 
-    return res.json({ message: `${ids.length} leads deleted successfully.` });
+    return res.json({ success: true, message: `${ids.length} leads deleted successfully.` });
   } catch (error: any) {
     console.error("Bulk Delete Error:", error);
-    return res.status(500).json({ message: "Bulk delete failed", error: error.message });
+    return res.status(500).json({ success: false, message: "Bulk delete failed", error: error.message });
   }
 };
 
+// POST /api/leads/bulk-update - Bulk Update Stage / Priority
 export const bulkUpdateLeads = async (req: AuthRequest, res: Response) => {
   try {
     const { ids, updates } = req.body;
     if (!Array.isArray(ids) || ids.length === 0 || !updates) {
-      return res.status(400).json({ message: "IDs and update fields are required." });
+      return res.status(400).json({ success: false, message: "IDs and update fields are required." });
     }
 
     if (isMongoConnected) {
@@ -376,18 +438,19 @@ export const bulkUpdateLeads = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    return res.json({ message: `${ids.length} leads updated successfully.` });
+    return res.json({ success: true, message: `${ids.length} leads updated successfully.` });
   } catch (error: any) {
     console.error("Bulk Update Error:", error);
-    return res.status(500).json({ message: "Bulk update failed", error: error.message });
+    return res.status(500).json({ success: false, message: "Bulk update failed", error: error.message });
   }
 };
 
+// POST /api/leads/import - Bulk Import from CSV
 export const importLeads = async (req: AuthRequest, res: Response) => {
   try {
     const { leads } = req.body;
     if (!Array.isArray(leads) || leads.length === 0) {
-      return res.status(400).json({ message: "Array of lead objects is required." });
+      return res.status(400).json({ success: false, message: "Array of lead objects is required." });
     }
 
     const processedLeads: any[] = [];
@@ -398,7 +461,7 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
       const scoring = calculateLeadScore(item);
       const leadObj = {
         name: item.name.trim(),
-        email: item.email.trim(),
+        email: item.email.toLowerCase().trim(),
         phone: item.phone || "",
         company: item.company || "Company",
         jobTitle: item.jobTitle || "Contact",
@@ -437,15 +500,17 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
     }
 
     return res.status(201).json({
+      success: true,
       message: `Successfully imported ${processedLeads.length} leads.`,
       count: processedLeads.length,
     });
   } catch (error: any) {
     console.error("Import Leads Error:", error);
-    return res.status(500).json({ message: "Import failed", error: error.message });
+    return res.status(500).json({ success: false, message: "Import failed", error: error.message });
   }
 };
 
+// GET /api/leads/analytics - Real-time Aggregate KPI & Funnel Metrics
 export const getAnalytics = async (_req: Request, res: Response) => {
   try {
     let allLeads: any[] = [];
@@ -472,7 +537,17 @@ export const getAnalytics = async (_req: Request, res: Response) => {
       Lost: { count: 0, value: 0 },
     };
 
-    const sourceCounts: Record<string, number> = {};
+    const sourceCounts: Record<string, number> = {
+      Website: 0,
+      LinkedIn: 0,
+      Instagram: 0,
+      "Google Ads": 0,
+      Referral: 0,
+      "Cold Outreach": 0,
+      Event: 0,
+      Other: 0,
+    };
+
     const priorityCounts: Record<string, number> = {
       Low: 0,
       Medium: 0,
@@ -503,7 +578,7 @@ export const getAnalytics = async (_req: Request, res: Response) => {
       statusCounts[lead.status].value += val;
 
       // Source breakdown
-      const src = lead.source || "Other";
+      const src = lead.source || "Website";
       sourceCounts[src] = (sourceCounts[src] || 0) + 1;
 
       // Priority breakdown
@@ -515,6 +590,7 @@ export const getAnalytics = async (_req: Request, res: Response) => {
     const avgDealSize = totalLeads > 0 ? Math.round(pipelineValue / totalLeads) : 0;
 
     return res.json({
+      success: true,
       totalLeads,
       pipelineValue,
       wonRevenue,
@@ -528,6 +604,6 @@ export const getAnalytics = async (_req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Analytics Error:", error);
-    return res.status(500).json({ message: "Failed to generate analytics", error: error.message });
+    return res.status(500).json({ success: false, message: "Failed to generate analytics", error: error.message });
   }
 };

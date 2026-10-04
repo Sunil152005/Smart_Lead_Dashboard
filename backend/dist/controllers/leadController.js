@@ -3,67 +3,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAnalytics = exports.importLeads = exports.bulkUpdateLeads = exports.bulkDeleteLeads = exports.addNote = exports.deleteLead = exports.updateLead = exports.getLeads = exports.createLead = void 0;
+exports.getAnalytics = exports.importLeads = exports.bulkUpdateLeads = exports.bulkDeleteLeads = exports.addNote = exports.deleteLead = exports.updateLead = exports.createLead = exports.getLeadById = exports.getLeads = void 0;
 const Lead_1 = __importDefault(require("../models/Lead"));
 const db_1 = require("../services/db");
 const leadScorer_1 = require("../services/leadScorer");
-const createLead = async (req, res) => {
-    try {
-        const data = req.body;
-        if (!data.name || !data.email) {
-            return res.status(400).json({ message: "Lead name and email are required." });
-        }
-        const scoring = (0, leadScorer_1.calculateLeadScore)(data);
-        const initialNotes = Array.isArray(data.notes) ? [...data.notes] : [];
-        const creatorName = req.user?.name || "Sales Rep";
-        initialNotes.push({
-            author: creatorName,
-            content: `Lead created in CRM via ${data.source || "Direct"}.`,
-            type: "note",
-            createdAt: new Date(),
-        });
-        const leadPayload = {
-            ...data,
-            dealValue: Number(data.dealValue || 0),
-            currency: data.currency || "USD",
-            status: data.status || "New",
-            priority: data.priority || "Medium",
-            source: data.source || "Website",
-            assignedTo: data.assignedTo || creatorName,
-            leadScore: scoring.score,
-            leadScoreCategory: scoring.category,
-            scoreFactors: scoring.factors,
-            tags: Array.isArray(data.tags) ? data.tags : [],
-            notes: initialNotes,
-        };
-        let createdLead;
-        if (db_1.isMongoConnected) {
-            createdLead = await Lead_1.default.create(leadPayload);
-        }
-        else {
-            createdLead = {
-                _id: `lead_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-                ...leadPayload,
-                notes: initialNotes.map((n, i) => ({
-                    _id: `note_${Date.now()}_${i}`,
-                    ...n,
-                })),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-            db_1.memoryStore.leads.unshift(createdLead);
-        }
-        return res.status(201).json(createdLead);
-    }
-    catch (error) {
-        console.error("Create Lead Error:", error);
-        return res.status(500).json({ message: "Failed to create lead", error: error.message });
-    }
-};
-exports.createLead = createLead;
+// GET /api/leads - View Leads List with Advanced Filtering, Search & Backend Pagination
 const getLeads = async (req, res) => {
     try {
         const { search, status, source, priority, assignedTo, category, sortBy = "createdAt", sortOrder = "desc", page = 1, limit = 10, } = req.query;
+        const pageNum = Math.max(1, Number(page) || 1);
+        const limitNum = limit === "all" ? 1000 : Math.max(1, Number(limit) || 10);
+        const skip = (pageNum - 1) * limitNum;
+        // Normalize sort field: handles 'latest' and 'oldest' aliases from assignment
+        let actualSortBy = String(sortBy);
+        let actualSortOrder = String(sortOrder).toLowerCase() === "asc" ? "asc" : "desc";
+        if (actualSortBy === "latest") {
+            actualSortBy = "createdAt";
+            actualSortOrder = "desc";
+        }
+        else if (actualSortBy === "oldest") {
+            actualSortBy = "createdAt";
+            actualSortOrder = "asc";
+        }
         if (db_1.isMongoConnected) {
             const query = {};
             if (status && status !== "ALL") {
@@ -91,24 +52,26 @@ const getLeads = async (req, res) => {
                     { tags: { $in: [new RegExp(searchStr, "i")] } },
                 ];
             }
-            const sortDirection = sortOrder === "asc" ? 1 : -1;
-            const sortObj = { [String(sortBy)]: sortDirection };
-            const pageNum = Math.max(1, Number(page));
-            const limitNum = limit === "all" ? 1000 : Math.max(1, Number(limit));
-            const skip = (pageNum - 1) * limitNum;
+            const sortDirection = actualSortOrder === "asc" ? 1 : -1;
+            const sortObj = { [actualSortBy]: sortDirection };
             const [leads, total] = await Promise.all([
                 Lead_1.default.find(query).sort(sortObj).skip(skip).limit(limitNum),
                 Lead_1.default.countDocuments(query),
             ]);
+            const totalPages = Math.ceil(total / limitNum) || 1;
             return res.json({
+                success: true,
                 leads,
                 totalLeads: total,
-                totalPages: Math.ceil(total / limitNum) || 1,
+                totalPages,
                 currentPage: pageNum,
+                limit: limitNum,
+                hasNextPage: pageNum < totalPages,
+                hasPrevPage: pageNum > 1,
             });
         }
         else {
-            // Memory Store Querying
+            // Memory Store Querying with In-Memory Search, Filter & Pagination
             let filtered = [...db_1.memoryStore.leads];
             if (status && status !== "ALL") {
                 filtered = filtered.filter((l) => l.status === status);
@@ -136,15 +99,17 @@ const getLeads = async (req, res) => {
                     return matchName || matchEmail || matchCompany || matchPhone || matchTags;
                 });
             }
-            // Sorting
-            const sortField = String(sortBy);
-            const isAsc = sortOrder === "asc";
+            // In-Memory Sorting
+            const isAsc = actualSortOrder === "asc";
             filtered.sort((a, b) => {
-                let valA = a[sortField];
-                let valB = b[sortField];
-                if (sortField === "createdAt" || sortField === "updatedAt") {
+                let valA = a[actualSortBy];
+                let valB = b[actualSortBy];
+                if (actualSortBy === "createdAt" || actualSortBy === "updatedAt") {
                     valA = new Date(valA || 0).getTime();
                     valB = new Date(valB || 0).getTime();
+                }
+                else if (typeof valA === "number" && typeof valB === "number") {
+                    return isAsc ? valA - valB : valB - valA;
                 }
                 else if (typeof valA === "string") {
                     valA = valA.toLowerCase();
@@ -157,24 +122,114 @@ const getLeads = async (req, res) => {
                 return 0;
             });
             const total = filtered.length;
-            const pageNum = Math.max(1, Number(page));
-            const limitNum = limit === "all" ? 1000 : Math.max(1, Number(limit));
-            const skip = (pageNum - 1) * limitNum;
+            const totalPages = Math.ceil(total / limitNum) || 1;
             const paginatedLeads = filtered.slice(skip, skip + limitNum);
             return res.json({
+                success: true,
                 leads: paginatedLeads,
                 totalLeads: total,
-                totalPages: Math.ceil(total / limitNum) || 1,
+                totalPages,
                 currentPage: pageNum,
+                limit: limitNum,
+                hasNextPage: pageNum < totalPages,
+                hasPrevPage: pageNum > 1,
             });
         }
     }
     catch (error) {
         console.error("Get Leads Error:", error);
-        return res.status(500).json({ message: "Failed to fetch leads", error: error.message });
+        return res.status(500).json({ success: false, message: "Failed to fetch leads", error: error.message });
     }
 };
 exports.getLeads = getLeads;
+// GET /api/leads/:id - View Single Lead Details
+const getLeadById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        let lead = null;
+        if (db_1.isMongoConnected) {
+            lead = await Lead_1.default.findById(id);
+        }
+        else {
+            lead = db_1.memoryStore.leads.find((l) => String(l._id) === String(id));
+        }
+        if (!lead) {
+            return res.status(404).json({ success: false, message: `Lead not found with ID: ${id}` });
+        }
+        return res.json({ success: true, lead });
+    }
+    catch (error) {
+        console.error("Get Lead By ID Error:", error);
+        return res.status(500).json({ success: false, message: "Failed to retrieve lead details", error: error.message });
+    }
+};
+exports.getLeadById = getLeadById;
+// POST /api/leads - Create Lead
+const createLead = async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data.name || !data.email) {
+            return res.status(400).json({ success: false, message: "Lead name and email are mandatory." });
+        }
+        // Basic email format check
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email.trim())) {
+            return res.status(400).json({ success: false, message: "Please provide a valid email address." });
+        }
+        const scoring = (0, leadScorer_1.calculateLeadScore)(data);
+        const initialNotes = Array.isArray(data.notes) ? [...data.notes] : [];
+        const creatorName = req.user?.name || "Sales Rep";
+        initialNotes.push({
+            author: creatorName,
+            content: `Lead created in CRM via ${data.source || "Website"}.`,
+            type: "note",
+            createdAt: new Date(),
+        });
+        const leadPayload = {
+            name: data.name.trim(),
+            email: data.email.toLowerCase().trim(),
+            phone: data.phone || "",
+            company: data.company || "Individual",
+            jobTitle: data.jobTitle || "Lead Contact",
+            dealValue: Number(data.dealValue || 0),
+            currency: data.currency || "USD",
+            status: data.status || "New",
+            priority: data.priority || "Medium",
+            source: data.source || "Website",
+            assignedTo: data.assignedTo || creatorName,
+            leadScore: scoring.score,
+            leadScoreCategory: scoring.category,
+            scoreFactors: scoring.factors,
+            followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            notes: initialNotes,
+        };
+        let createdLead;
+        if (db_1.isMongoConnected) {
+            createdLead = await Lead_1.default.create(leadPayload);
+        }
+        else {
+            createdLead = {
+                _id: `lead_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                ...leadPayload,
+                notes: initialNotes.map((n, i) => ({
+                    _id: `note_${Date.now()}_${i}`,
+                    ...n,
+                })),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+            db_1.memoryStore.leads.unshift(createdLead);
+        }
+        return res.status(201).json(createdLead);
+    }
+    catch (error) {
+        console.error("Create Lead Error:", error);
+        return res.status(500).json({ success: false, message: "Failed to create lead", error: error.message });
+    }
+};
+exports.createLead = createLead;
+// PUT /api/leads/:id - Update Lead
 const updateLead = async (req, res) => {
     try {
         const { id } = req.params;
@@ -187,16 +242,16 @@ const updateLead = async (req, res) => {
             existingLead = db_1.memoryStore.leads.find((l) => String(l._id) === String(id));
         }
         if (!existingLead) {
-            return res.status(404).json({ message: "Lead not found." });
+            return res.status(404).json({ success: false, message: "Lead not found." });
         }
-        // Check if status changed to log activity
+        // Check if status changed to log activity timeline event
         const notes = existingLead.notes ? [...existingLead.notes] : [];
         if (updates.status && updates.status !== existingLead.status) {
             const updater = req.user?.name || "Team Member";
             notes.push({
                 _id: `note_${Date.now()}`,
                 author: updater,
-                content: `Stage changed from "${existingLead.status}" to "${updates.status}".`,
+                content: `Stage updated from "${existingLead.status}" to "${updates.status}".`,
                 type: "stage_change",
                 createdAt: new Date(),
             });
@@ -204,7 +259,7 @@ const updateLead = async (req, res) => {
         }
         // Recalculate score with updated fields
         const mergedForScore = {
-            ...existingLead.toObject ? existingLead.toObject() : existingLead,
+            ...(existingLead.toObject ? existingLead.toObject() : existingLead),
             ...updates,
         };
         const scoring = (0, leadScorer_1.calculateLeadScore)(mergedForScore);
@@ -230,40 +285,42 @@ const updateLead = async (req, res) => {
     }
     catch (error) {
         console.error("Update Lead Error:", error);
-        return res.status(500).json({ message: "Failed to update lead", error: error.message });
+        return res.status(500).json({ success: false, message: "Failed to update lead", error: error.message });
     }
 };
 exports.updateLead = updateLead;
+// DELETE /api/leads/:id - Delete Lead (Admin Only)
 const deleteLead = async (req, res) => {
     try {
         const { id } = req.params;
         if (db_1.isMongoConnected) {
             const result = await Lead_1.default.findByIdAndDelete(id);
             if (!result) {
-                return res.status(404).json({ message: "Lead not found." });
+                return res.status(404).json({ success: false, message: "Lead not found." });
             }
         }
         else {
             const idx = db_1.memoryStore.leads.findIndex((l) => String(l._id) === String(id));
             if (idx === -1) {
-                return res.status(404).json({ message: "Lead not found." });
+                return res.status(404).json({ success: false, message: "Lead not found." });
             }
             db_1.memoryStore.leads.splice(idx, 1);
         }
-        return res.json({ message: "Lead deleted successfully", id });
+        return res.json({ success: true, message: "Lead deleted successfully", id });
     }
     catch (error) {
         console.error("Delete Lead Error:", error);
-        return res.status(500).json({ message: "Failed to delete lead", error: error.message });
+        return res.status(500).json({ success: false, message: "Failed to delete lead", error: error.message });
     }
 };
 exports.deleteLead = deleteLead;
+// POST /api/leads/:id/notes - Add Note / Timeline Event
 const addNote = async (req, res) => {
     try {
         const { id } = req.params;
         const { content, type = "note" } = req.body;
         if (!content) {
-            return res.status(400).json({ message: "Note content is required." });
+            return res.status(400).json({ success: false, message: "Note content is required." });
         }
         const author = req.user?.name || "Sales Rep";
         const newNote = {
@@ -276,7 +333,7 @@ const addNote = async (req, res) => {
         if (db_1.isMongoConnected) {
             const lead = await Lead_1.default.findById(id);
             if (!lead)
-                return res.status(404).json({ message: "Lead not found." });
+                return res.status(404).json({ success: false, message: "Lead not found." });
             lead.notes.push(newNote);
             const scoring = (0, leadScorer_1.calculateLeadScore)(lead);
             lead.leadScore = scoring.score;
@@ -288,7 +345,7 @@ const addNote = async (req, res) => {
         else {
             const idx = db_1.memoryStore.leads.findIndex((l) => String(l._id) === String(id));
             if (idx === -1)
-                return res.status(404).json({ message: "Lead not found." });
+                return res.status(404).json({ success: false, message: "Lead not found." });
             const lead = db_1.memoryStore.leads[idx];
             const noteItem = { _id: `note_${Date.now()}`, ...newNote };
             lead.notes = [...(lead.notes || []), noteItem];
@@ -303,15 +360,16 @@ const addNote = async (req, res) => {
     }
     catch (error) {
         console.error("Add Note Error:", error);
-        return res.status(500).json({ message: "Failed to add note", error: error.message });
+        return res.status(500).json({ success: false, message: "Failed to add note", error: error.message });
     }
 };
 exports.addNote = addNote;
+// POST /api/leads/bulk-delete - Bulk Delete Leads (Admin Only)
 const bulkDeleteLeads = async (req, res) => {
     try {
         const { ids } = req.body;
         if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({ message: "Array of lead IDs is required." });
+            return res.status(400).json({ success: false, message: "Array of lead IDs is required." });
         }
         if (db_1.isMongoConnected) {
             await Lead_1.default.deleteMany({ _id: { $in: ids } });
@@ -319,19 +377,20 @@ const bulkDeleteLeads = async (req, res) => {
         else {
             db_1.memoryStore.leads = db_1.memoryStore.leads.filter((l) => !ids.map(String).includes(String(l._id)));
         }
-        return res.json({ message: `${ids.length} leads deleted successfully.` });
+        return res.json({ success: true, message: `${ids.length} leads deleted successfully.` });
     }
     catch (error) {
         console.error("Bulk Delete Error:", error);
-        return res.status(500).json({ message: "Bulk delete failed", error: error.message });
+        return res.status(500).json({ success: false, message: "Bulk delete failed", error: error.message });
     }
 };
 exports.bulkDeleteLeads = bulkDeleteLeads;
+// POST /api/leads/bulk-update - Bulk Update Stage / Priority
 const bulkUpdateLeads = async (req, res) => {
     try {
         const { ids, updates } = req.body;
         if (!Array.isArray(ids) || ids.length === 0 || !updates) {
-            return res.status(400).json({ message: "IDs and update fields are required." });
+            return res.status(400).json({ success: false, message: "IDs and update fields are required." });
         }
         if (db_1.isMongoConnected) {
             await Lead_1.default.updateMany({ _id: { $in: ids } }, { $set: updates });
@@ -344,19 +403,20 @@ const bulkUpdateLeads = async (req, res) => {
                 return lead;
             });
         }
-        return res.json({ message: `${ids.length} leads updated successfully.` });
+        return res.json({ success: true, message: `${ids.length} leads updated successfully.` });
     }
     catch (error) {
         console.error("Bulk Update Error:", error);
-        return res.status(500).json({ message: "Bulk update failed", error: error.message });
+        return res.status(500).json({ success: false, message: "Bulk update failed", error: error.message });
     }
 };
 exports.bulkUpdateLeads = bulkUpdateLeads;
+// POST /api/leads/import - Bulk Import from CSV
 const importLeads = async (req, res) => {
     try {
         const { leads } = req.body;
         if (!Array.isArray(leads) || leads.length === 0) {
-            return res.status(400).json({ message: "Array of lead objects is required." });
+            return res.status(400).json({ success: false, message: "Array of lead objects is required." });
         }
         const processedLeads = [];
         const author = req.user?.name || "Import Engine";
@@ -366,7 +426,7 @@ const importLeads = async (req, res) => {
             const scoring = (0, leadScorer_1.calculateLeadScore)(item);
             const leadObj = {
                 name: item.name.trim(),
-                email: item.email.trim(),
+                email: item.email.toLowerCase().trim(),
                 phone: item.phone || "",
                 company: item.company || "Company",
                 jobTitle: item.jobTitle || "Contact",
@@ -404,16 +464,18 @@ const importLeads = async (req, res) => {
             db_1.memoryStore.leads.unshift(...timestamped);
         }
         return res.status(201).json({
+            success: true,
             message: `Successfully imported ${processedLeads.length} leads.`,
             count: processedLeads.length,
         });
     }
     catch (error) {
         console.error("Import Leads Error:", error);
-        return res.status(500).json({ message: "Import failed", error: error.message });
+        return res.status(500).json({ success: false, message: "Import failed", error: error.message });
     }
 };
 exports.importLeads = importLeads;
+// GET /api/leads/analytics - Real-time Aggregate KPI & Funnel Metrics
 const getAnalytics = async (_req, res) => {
     try {
         let allLeads = [];
@@ -438,7 +500,16 @@ const getAnalytics = async (_req, res) => {
             Won: { count: 0, value: 0 },
             Lost: { count: 0, value: 0 },
         };
-        const sourceCounts = {};
+        const sourceCounts = {
+            Website: 0,
+            LinkedIn: 0,
+            Instagram: 0,
+            "Google Ads": 0,
+            Referral: 0,
+            "Cold Outreach": 0,
+            Event: 0,
+            Other: 0,
+        };
         const priorityCounts = {
             Low: 0,
             Medium: 0,
@@ -465,7 +536,7 @@ const getAnalytics = async (_req, res) => {
             statusCounts[lead.status].count++;
             statusCounts[lead.status].value += val;
             // Source breakdown
-            const src = lead.source || "Other";
+            const src = lead.source || "Website";
             sourceCounts[src] = (sourceCounts[src] || 0) + 1;
             // Priority breakdown
             const prio = lead.priority || "Medium";
@@ -474,6 +545,7 @@ const getAnalytics = async (_req, res) => {
         const conversionRate = totalLeads > 0 ? Number(((wonCount / totalLeads) * 100).toFixed(1)) : 0;
         const avgDealSize = totalLeads > 0 ? Math.round(pipelineValue / totalLeads) : 0;
         return res.json({
+            success: true,
             totalLeads,
             pipelineValue,
             wonRevenue,
@@ -488,7 +560,7 @@ const getAnalytics = async (_req, res) => {
     }
     catch (error) {
         console.error("Analytics Error:", error);
-        return res.status(500).json({ message: "Failed to generate analytics", error: error.message });
+        return res.status(500).json({ success: false, message: "Failed to generate analytics", error: error.message });
     }
 };
 exports.getAnalytics = getAnalytics;
