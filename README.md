@@ -1,308 +1,262 @@
-# Smart Lead Dashboard CRM
+# 🚀 Smart Lead Dashboard CRM (Full Stack MERN + TypeScript)
 
-A full-stack Lead Management and Customer Relationship Management (CRM) dashboard built using the MERN stack and TypeScript. The application helps manage leads, track sales pipelines, analyze performance, and organize customer interactions through a modern, responsive interface.
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-## Project Overview
+A full-stack, enterprise-grade Lead Management & CRM Dashboard built strictly with **React, TypeScript, TailwindCSS, Node.js, Express.js, TypeScript, and MongoDB + Mongoose**.
 
-Smart Lead Dashboard CRM is designed to simplify lead management and improve sales workflow efficiency. It provides secure authentication, role-based access control, lead tracking, interactive analytics, and CSV import/export functionality.
+Designed with clean architecture, strict type safety, real-world engineering practices, and rich visual aesthetics with **Dark Mode**, **AI Lead Scoring (0–100)**, **Interactive Kanban Pipeline**, **Debounced Search**, **CSV Batch Import & Export**, and **Role-Based Access Control (RBAC)**.
 
-The application features a modern dashboard with light and dark modes, an interactive Kanban pipeline, and an automated lead-scoring algorithm.
+---
 
-## Tech Stack
+## ⚡ Quick Start: How to Run in 2 Steps
 
-### Frontend
-- React 19
-- TypeScript
-- Tailwind CSS
-- Vite
-- Axios
-- Lucide Icons
-
-### Backend
-- Node.js
-- Express.js 5
-- TypeScript
-- MongoDB
-- Mongoose
-
-### Authentication and Security
-- JSON Web Tokens (JWT)
-- bcryptjs password hashing
-- Role-Based Access Control (RBAC)
-- Protected frontend and backend routes
-
-### DevOps
-- Docker
-- Docker Compose
-
-## Key Features
-
-### 1. Authentication and Authorization
-- User registration and login.
-- JWT-based authentication.
-- Secure password hashing with bcryptjs.
-- Protected routes and API endpoints.
-- Role-based permissions for administrators and sales representatives.
-
-### 2. Lead Management
-- Create, view, update, and delete leads.
-- Manage lead details, contact information, status, source, and deal value.
-- View detailed lead information and activity history.
-- Track lead progress through different sales stages.
-- Restrict lead deletion to administrators.
-
-### 3. Search, Filtering, and Sorting
-- Search leads by name, email, company, phone, and tags.
-- Filter leads by status and source.
-- Sort by creation date, deal value, AI score, or name.
-- Combine multiple filters.
-- Debounced search to reduce unnecessary API requests.
-
-### 4. Dashboard and Analytics
-- KPI summary cards.
-- Sales pipeline and funnel analytics.
-- Lead source analysis.
-- Interactive dashboard views.
-- Paginated lead listing.
-
-### 5. Interactive Kanban Board
-- Visualize leads across sales pipeline stages.
-- Track progress from new leads to completed or lost opportunities.
-- Update lead stages through interactive controls.
-
-### 6. Automated Lead Scoring
-- Assign lead scores from 0 to 100.
-- Evaluate deal value, engagement history, priority, and acquisition channel.
-- Classify leads as:
-  - **Hot:** 75 and above
-  - **Warm:** 45–74
-  - **Cold:** Below 45
-
-### 7. CSV Import and Export
-- Import multiple leads using CSV files.
-- Export filtered or complete lead lists.
-- Validate imported data.
-- Use column mapping and a downloadable CSV template.
-
-### 8. Activity Timeline
-- Add notes to lead records.
-- Record calls and email interactions.
-- Maintain timestamped activity history.
-- Track changes to lead stages.
-
-### 9. User Interface
-- Responsive layouts for desktop, tablet, and mobile.
-- Light and dark mode.
-- Reusable React components.
-- Loading indicators and skeleton screens.
-- Form validation and toast notifications.
-- Keyboard shortcuts for common actions.
-
-### 10. Database Support
-- MongoDB Atlas integration.
-- Mongoose-based data models.
-- In-memory fallback with sample CRM leads, as described in the project implementation.
-
-## Role-Based Access Control
-
-| Feature | Admin Manager | Sales User |
-|---|---|---|
-| View and search leads | Yes | Yes |
-| Create leads | Yes | Yes |
-| Update leads and stages | Yes | Yes |
-| Add notes and call logs | Yes | Yes |
-| Import and export CSV | Yes | Yes |
-| View analytics and Kanban | Yes | Yes |
-| Delete individual leads | Yes | No |
-| Bulk delete leads | Yes | No |
-
-## Project Structure
-
-```text
-Smart_Lead_Dashboard/
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   │   ├── authController.ts
-│   │   │   └── leadController.ts
-│   │   ├── middlewares/
-│   │   │   ├── authMiddleware.ts
-│   │   │   └── errorHandler.ts
-│   │   ├── models/
-│   │   │   ├── Lead.ts
-│   │   │   └── User.ts
-│   │   ├── routes/
-│   │   │   ├── authRoutes.ts
-│   │   │   └── leadRoutes.ts
-│   │   ├── services/
-│   │   │   ├── db.ts
-│   │   │   └── leadScorer.ts
-│   │   └── index.ts
-│   ├── .env.example
-│   ├── Dockerfile
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── context/
-│   │   ├── pages/
-│   │   ├── types/
-│   │   ├── api.ts
-│   │   ├── App.tsx
-│   │   └── index.css
-│   ├── .env.example
-│   ├── Dockerfile
-│   └── package.json
-├── docker-compose.yml
-└── README.md
-```
-
-## Prerequisites
-
-Before running the application, ensure that you have installed:
-
-- Node.js and npm
-- MongoDB Atlas account or a compatible MongoDB setup
-- Git
-- Docker and Docker Compose (optional)
-
-## Installation and Setup
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Sunil152005/Smart_Lead_Dashboard.git
-cd Smart_Lead_Dashboard
-```
-
-### 2. Set Up the Backend
-
-Open a terminal and run:
-
+### 1️⃣ Start Backend (Terminal 1)
 ```bash
 cd backend
 npm install
-```
-
-Configure the environment variables using the provided `.env.example` file. Add the required MongoDB connection string and other variables expected by the backend configuration.
-
-Build and start the backend:
-
-```bash
 npm run build
 npm start
 ```
+> 📡 Server running at: **`http://localhost:5000`** | Health Check: **`http://localhost:5000/api/health`**
 
-The backend is expected to run at:
+---
 
-`http://localhost:5000`
-
-Health check:
-
-`http://localhost:5000/api/health`
-
-### 3. Set Up the Frontend
-
-Open a second terminal from the project root:
-
+### 2️⃣ Start Frontend (Terminal 2)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+> 🌐 Open in browser: **`http://localhost:5173`**
 
-Open the frontend in your browser:
+---
 
-`http://localhost:5173`
+## 🔑 Demo Login Accounts
 
-**Note:** Ensure that the environment variables, scripts, and API configuration match the current project files.
+| Role | Email | Password | Permissions |
+| :--- | :--- | :--- | :--- |
+| **Admin Manager** | `rahul@gmail.com` | `123456` | Full Access (Create, View, Update, **Delete**, Bulk Actions) |
+| **Sales Representative** | `priya@sales.com` | `123456` | Sales Access (Create, View, Update Status & Notes) |
 
-## Running with Docker
+> 💡 **Tip**: Click the **1-Click Instant Demo Login** buttons on the login screen or use the **Switch Role** pill in the top navbar to test Admin vs Sales behavior instantly!
 
-If Docker and Docker Compose are installed, run the following command from the project root:
+---
+
+## 📑 Table of Contents
+- [Tech Stack](#-mandatory-tech-stack)
+- [Core Features & Assignment Checklist](#-core-features--assignment-checklist)
+- [Innovative & Bonus Features](#-innovative--bonus-features)
+- [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
+- [Project Architecture](#-project-architecture)
+- [Running with Docker](#-running-with-docker)
+- [API Documentation](#-api-documentation)
+- [Evaluation Criteria Alignment](#-evaluation-criteria-alignment)
+
+---
+
+## 🛠 Mandatory Tech Stack
+
+| Layer | Technologies Used |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript (Strict, 0 plain JS), TailwindCSS, Lucide Icons, Axios, React CSV |
+| **Backend** | Node.js, Express.js 5, TypeScript (Strict, 0 plain JS), MongoDB + Mongoose |
+| **Auth & Security** | JWT (JSON Web Tokens), bcryptjs Password Hashing, RBAC Middleware |
+| **DevOps** | Docker, Docker Compose, ts-node-dev, Vite |
+
+---
+
+## ✅ Core Features & Assignment Checklist
+
+### 1. Authentication System (JWT-based)
+- ✅ **User Registration** with role selection (`Admin` or `Sales User`).
+- ✅ **User Login** with secure JWT token generation and storage handling.
+- ✅ **Password Hashing** using `bcryptjs` with salt rounds.
+- ✅ **Auth Middleware** (`protect`) for validating tokens and extracting user roles (`req.user`).
+- ✅ **Protected Routes** on frontend (`<ProtectedRoute>`) and backend.
+
+### 2. Leads Management (CRUD)
+- ✅ **Lead Fields**: `Name`, `Email`, `Status` (New, Contacted, Qualified, Lost, etc.), `Source` (Website, Instagram, Referral, etc.), `Deal Value`, `Created At`.
+- ✅ **Create Lead**: Add prospects with input validation and instant AI lead scoring.
+- ✅ **Update Lead**: Inline status changer and full modal editor.
+- ✅ **Delete Lead**: Role-guarded deletion (Admins only).
+- ✅ **View Leads List**: Paginated data grid with sorting and status indicators.
+- ✅ **View Single Lead Details**: Slide-over Drawer (`GET /api/leads/:id`) showing full account details, contact info, and activity log.
+
+### 3. Advanced Filtering & Search
+- ✅ **Filter by Status**: `New`, `Contacted`, `Qualified`, `Lost`, `In Progress`, `Proposal Sent`, `Won`.
+- ✅ **Filter by Source**: `Website`, `Instagram`, `Referral`, `LinkedIn`, `Google Ads`, `Cold Outreach`, `Event`.
+- ✅ **Search**: Full-text search matching `Name`, `Email`, `Company`, `Phone`, and custom `Tags`.
+- ✅ **Sorting**: `Latest` (newest first), `Oldest` (oldest first), `Deal Value`, `AI Score`, `Name`.
+- ✅ **Multi-Filter Synergy**: All filters (Status + Source + Search + Sorting) work simultaneously together.
+- ✅ **Debounced Search**: 350ms input debounce prevents server spam while typing.
+
+### 4. Backend Pagination
+- ✅ **Mandatory Backend Pagination**: Using MongoDB `skip()` and `limit()`.
+- ✅ **Standard Limit**: 10 records per page.
+- ✅ **Pagination Response Metadata**: `currentPage`, `totalPages`, `totalLeads`, `limit`, `hasNextPage`, `hasPrevPage`.
+
+### 5. Frontend UI & UX Excellence
+- ✅ **Responsive Design**: Mobile, tablet, and desktop layouts.
+- ✅ **Reusable Components**: `LeadTable`, `KanbanBoard`, `AnalyticsView`, `KPIStats`, `LeadDrawer`, `LeadModal`, `ImportModal`, `Navbar`.
+- ✅ **Loading States**: Animated spinners and skeleton loaders.
+- ✅ **Empty States**: Helpful illustrations and clear call-to-action to reset filters.
+- ✅ **Error Handling UI**: Toast notifications, inline form validation, error banners.
+
+### 6. API Standards & Error Handling
+- ✅ **RESTful Design**: Predictable URIs and standard HTTP methods.
+- ✅ **HTTP Status Codes**: `200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, `500 Internal Error`.
+- ✅ **Centralized Error Middleware**: Global error interceptor catching exceptions with structured response format.
+
+---
+
+## 🌟 Innovative & Bonus Features
+
+1. **Dark Mode Support (PDF Bonus Feature)**:
+   - Modern, sleek high-contrast Dark Mode with 1-click switcher in the navigation bar.
+   - Persistent theme setting in `localStorage`.
+2. **Interactive Kanban Pipeline Board**:
+   - Visual board view categorized into 7 deal stages (*New ➔ Contacted ➔ In Progress ➔ Qualified ➔ Proposal Sent ➔ Won ➔ Lost*).
+   - 1-click stage advancement and retreat buttons.
+3. **Smart AI Lead Scoring (0–100 pts)**:
+   - Evaluates deal size ($), engagement history, priority, and acquisition channel.
+   - Classifies leads into **Hot 🔥 (75+)**, **Warm ⚡ (45–74)**, and **Cold ❄️ (<45)** with transparent assessment factors.
+4. **Interactive Lead Activity & Notes Timeline**:
+   - Post timestamped **Notes**, **Call Logs**, and **Email interactions**.
+   - Automatic audit logs when deal stages change.
+5. **Batch CSV Import & Export**:
+   - 1-Click CSV export for filtered or all leads.
+   - Drag & drop CSV batch importer with column auto-mapping and downloadable template.
+6. **1-Click Role Switcher**:
+   - Seamlessly switch between **Admin (Rahul)** and **Sales Rep (Priya)** directly from the top navigation to test permissions instantly.
+7. **Keyboard Shortcuts**:
+   - Press `/` or `Ctrl + K` to jump to search.
+   - Press `N` to open the New Lead modal.
+   - Press `Esc` to close any open modal or drawer.
+8. **Dual-Mode Resilient Database Engine**:
+   - Connects to MongoDB Atlas when online, with fallback to an in-memory store pre-seeded with 20+ realistic CRM business leads.
+
+---
+
+## 🔒 Role-Based Access Control (RBAC)
+
+| Feature / Action | Admin Manager (`ADMIN`) | Sales User (`SALES`) |
+| :--- | :---: | :---: |
+| View Leads & Search | ✅ | ✅ |
+| Create New Lead | ✅ | ✅ |
+| Update Lead & Stage | ✅ | ✅ |
+| Add Notes & Call Logs | ✅ | ✅ |
+| Export & Import CSV | ✅ | ✅ |
+| View Analytics & Kanban | ✅ | ✅ |
+| **Delete Single Lead** | ✅ | ❌ *(Forbidden)* |
+| **Bulk Delete Leads** | ✅ | ❌ *(Forbidden)* |
+
+---
+
+## 📁 Project Architecture
+
+```text
+lead-dashboard/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── authController.ts     # User registration, login, profile
+│   │   │   └── leadController.ts     # CRUD, pagination, filtering, analytics, import
+│   │   ├── middlewares/
+│   │   │   ├── authMiddleware.ts     # JWT authentication & role authorization
+│   │   │   └── errorHandler.ts       # Centralized API error & 404 handler
+│   │   ├── models/
+│   │   │   ├── Lead.ts               # Mongoose Lead Schema & Types
+│   │   │   └── User.ts               # Mongoose User Schema & Types
+│   │   ├── routes/
+│   │   │   ├── authRoutes.ts         # /api/auth routes
+│   │   │   └── leadRoutes.ts         # /api/leads routes
+│   │   ├── services/
+│   │   │   ├── db.ts                 # Database initialization & seed data
+│   │   │   └── leadScorer.ts         # AI lead scoring algorithm
+│   │   └── index.ts                  # Server entry & CORS configuration
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── AnalyticsView.tsx     # Visual pipeline funnel & channel charts
+│   │   │   ├── ImportModal.tsx       # CSV file upload & validator
+│   │   │   ├── KPIStats.tsx          # Real-time summary metric cards
+│   │   │   ├── KanbanBoard.tsx       # Visual drag/click stage pipeline
+│   │   │   ├── LeadDrawer.tsx        # Slide-over profile & activity timeline
+│   │   │   ├── LeadModal.tsx         # Create / Edit lead form modal
+│   │   │   ├── LeadTable.tsx         # Data grid with sorting & pagination
+│   │   │   └── Navbar.tsx            # Navigation, views, dark mode, role switch
+│   │   ├── context/
+│   │   │   ├── ThemeContext.tsx      # Dark / Light mode provider
+│   │   │   └── ToastContext.tsx      # Notification banner system
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx         # Main CRM single-page workspace
+│   │   │   └── Login.tsx             # Authentication & demo login screen
+│   │   ├── types/
+│   │   │   └── index.ts              # Strict TypeScript interfaces
+│   │   ├── api.ts                    # Axios instance with JWT interceptor
+│   │   ├── App.tsx                   # Routing & protected route guards
+│   │   └── index.css                 # TailwindCSS base styles
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 🐳 Running with Docker
+
+Run the entire full-stack application with a single command using Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-The application is configured to use the following local addresses:
-
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:5000`
 
-## Demo Accounts
+---
 
-The original project documentation provides the following demo accounts:
+## 📡 API Documentation
 
-| Role | Email | Password |
-|---|---|---|
-| Admin Manager | `rahul@gmail.com` | `123456` |
-| Sales Representative | `priya@sales.com` | `123456` |
+### Auth Endpoints (`/api/auth`)
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/auth/register` | Register new user (`name`, `email`, `password`, `role`) | No |
+| `POST` | `/api/auth/login` | Login and receive JWT token + user object | No |
+| `GET` | `/api/auth/me` | Fetch authenticated user profile | Yes |
 
-Use these credentials only if the demo accounts are available in your current application environment. Change or remove publicly documented demo credentials if they provide access to a shared or production database.
-
-## API Documentation
-
-### Authentication Endpoints
-
-Base path: `/api/auth`
-
-| Method | Endpoint | Description | Authentication |
-|---|---|---|---|
-| POST | `/api/auth/register` | Register a user | No |
-| POST | `/api/auth/login` | Authenticate a user | No |
-| GET | `/api/auth/me` | Retrieve the current user profile | Yes |
-
-### Lead Management Endpoints
-
-Base path: `/api/leads`
-
-| Method | Endpoint | Description | Authentication |
-|---|---|---|---|
-| GET | `/api/leads` | Retrieve leads with search, filters, sorting, and pagination | Yes |
-| GET | `/api/leads/:id` | Retrieve a specific lead | Yes |
-| POST | `/api/leads` | Create a lead | Yes |
-| PUT | `/api/leads/:id` | Update a lead | Yes |
-| DELETE | `/api/leads/:id` | Delete a lead | Admin |
-| POST | `/api/leads/:id/notes` | Add notes or activity records | Yes |
-| GET | `/api/leads/analytics` | Retrieve analytics and KPI summaries | Yes |
-| POST | `/api/leads/import` | Import leads from CSV | Yes |
-| POST | `/api/leads/bulk-delete` | Delete multiple leads | Admin |
-| POST | `/api/leads/bulk-update` | Update multiple lead stages | Yes |
-
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|---|---|
-| `/` or `Ctrl + K` | Focus the search field |
-| `N` | Open the new lead form |
-| `Esc` | Close an open modal or drawer |
-
-## Security Considerations
-
-- Passwords are hashed using bcryptjs.
-- JWT authentication protects restricted routes.
-- Role-based authorization limits sensitive operations.
-- Environment variables should be used for database credentials and secrets.
-- Never commit `.env` files, database credentials, JWT secrets, or private access tokens.
-- Demo credentials should not be reused in production environments.
-
-## Future Improvements
-
-Potential enhancements include:
-
-- Email notifications for lead updates.
-- Advanced reporting and analytics.
-- Lead assignment and team collaboration.
-- Automated follow-up reminders.
-- Integration with external communication tools.
-- Expanded automated testing and monitoring.
-
-## Author
-
-**Sunil Jadhav**
-
-- GitHub: [@Sunil152005](https://github.com/Sunil152005)
-- Repository: [Smart Lead Dashboard](https://github.com/Sunil152005/Smart_Lead_Dashboard)
+### Leads Endpoints (`/api/leads`)
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `GET` | `/api/leads` | List leads with search, filters, sorting & pagination | Yes |
+| `GET` | `/api/leads/:id` | View single lead details | Yes |
+| `POST` | `/api/leads` | Create new lead with automated AI scoring | Yes |
+| `PUT` | `/api/leads/:id` | Update lead fields or stage progression | Yes |
+| `DELETE` | `/api/leads/:id` | Delete lead (`ADMIN` role only) | Yes (`ADMIN`) |
+| `POST` | `/api/leads/:id/notes` | Add note, call log, or email record | Yes |
+| `GET` | `/api/leads/analytics` | Aggregate metrics, funnel data & KPI summaries | Yes |
+| `POST` | `/api/leads/import` | Bulk import leads from CSV | Yes |
+| `POST` | `/api/leads/bulk-delete` | Delete multiple leads (`ADMIN` role only) | Yes (`ADMIN`) |
+| `POST` | `/api/leads/bulk-update` | Bulk update stage status for selected leads | Yes |
 
 ---
+
+## Author
+**Sunil Jadhav**
+- **Project**: Smart Leads Dashboard
+- **Github Repo**: https://github.com/Sunil152005/Smart_Lead_Dashboard
